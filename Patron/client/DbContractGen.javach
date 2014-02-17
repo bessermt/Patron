@@ -1,0 +1,478 @@
+// Copyright (c) 2014 Mitch T. Besser, All rights reserved.
+
+// C Preprocessor macros used to help generate a SQLite database contract file.
+// This file is included in another file in order to provide the generative macros.
+
+// Usage:
+// gcc -E -P -D OUTPUT=[JAVA | C | H] filename >outfile.ext
+//
+// Examples:
+// gcc -I ~/opt/boost -x c -E -P -D OUTPUT=JAVA DbSchema.javach >DbSchemaGen.java
+// gcc -I ~/opt/boost -x c -E -P -D OUTPUT=C DbSchema.javach >DbSchemaGen.c
+// gcc -I ~/opt/boost -x c -E -P -D OUTPUT=H DbSchema.javach >DbSchemaGen.h
+
+// The boost preprocessor headers:
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/comparison/equal.hpp>
+#include <boost/preprocessor/comparison/not_equal.hpp>
+#include <boost/preprocessor/control/expr_iif.hpp>
+#include <boost/preprocessor/control/iif.hpp>
+#include <boost/preprocessor/facilities/empty.hpp>
+#include <boost/preprocessor/facilities/identity.hpp>
+#include <boost/preprocessor/punctuation/comma.hpp>
+#include <boost/preprocessor/punctuation/comma_if.hpp>
+#include <boost/preprocessor/repetition/repeat.hpp>
+#include <boost/preprocessor/seq/cat.hpp>
+#include <boost/preprocessor/seq/elem.hpp>
+#include <boost/preprocessor/seq/enum.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
+#include <boost/preprocessor/seq/for_each_i.hpp>
+#include <boost/preprocessor/seq/push_front.hpp>
+#include <boost/preprocessor/seq/replace.hpp>
+#include <boost/preprocessor/seq/reverse.hpp>
+#include <boost/preprocessor/seq/seq.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <boost/preprocessor/stringize.hpp>
+
+// Output options:
+#define JAVA 0
+#define C    1
+#define H    2
+
+// Output language routing macros: 
+#if OUTPUT==JAVA
+#	define JAVACH_INT static final int
+#	define JAVACH_STRING static final String
+#	define JAVACH_REC_PK protected long
+#	define JAVACH_REC_FK public long
+#	define JAVACH_REC_VAL public String
+#	define JAVACH_DB_CONTRACT(type, var, db_member_seq) JAVA_DB_CONTRACT(type, var, db_member_seq)
+#	define CAT_OP +
+#elif OUTPUT==C || OUTPUT==H
+#	define HASH #
+#	define JAVACH_INT const int
+#	define JAVACH_STRING const char* const
+#	define JAVACH_REC_PK const long
+#	define JAVACH_REC_FK long
+#	define JAVACH_REC_VAL const char* const
+#	define CAT_OP BOOST_PP_EMPTY()
+#	if OUTPUT==C
+#		define JAVACH_DB_CONTRACT(type, var, db_member_seq) C_DB_CONTRACT(type, var, db_member_seq)
+#	elif OUTPUT==H
+#		define JAVACH_DB_CONTRACT(type, var, db_member_seq) H_DB_CONTRACT(type, var, db_member_seq)
+#	endif
+#else
+#	error OUTPUT = JAVA, C, or H is not defined.
+#endif
+
+// Common SQL command fragments:
+#define SQL_CREATE_TABLE "CREATE TABLE "
+#define SQL_DROP_TABLE "DROP TABLE IF EXISTS "
+
+#define SQL_COL_TYPE_ID " INTEGER PRIMARY KEY AUTOINCREMENT"
+#define SQL_COL_TYPE_FK(table, field)    \
+    "INTEGER REFERENCES " CAT_OP         \
+    BOOST_PP_STRINGIZE(field) CAT_OP     \
+    "(" CAT_OP                           \
+        BOOST_PP_STRINGIZE(table) CAT_OP \
+    ")"
+#define SQL_COL_TYPE_REQUIRED " TEXT NOT NULL"
+#define SQL_COL_TYPE_OPTIONAL " TEXT"
+
+#define COMMA_STR ","
+#define LBRACE {
+#define RBRACE }
+#define NEWLINE BOOST_PP_EMPTY()
+
+#define ID _id     // android.provider.BaseColumns._ID
+#define DATA _data // android.provider.MediaStore.MediaColumns.DATA
+
+// Table names:
+#define TABLE_NAME_ORGANIZATION Organization
+#define TABLE_NAME_STAFF        Staff
+#define TABLE_NAME_COLLECTION   Collection
+#define TABLE_NAME_ITEM         Item
+
+// Database member tags:
+#define DB_MEMBER_CONST_TAG 0
+#define DB_MEMBER_TABLE_TAG 1
+
+// Database member sequence elements:
+#define TABLE_MEMBER_COL_STUB(name) TABLE_MEMBER_COL(name, BOOST_PP_EMPTY, BOOST_PP_EMPTY)
+#define DB_MEMBER_CONST(type, name, value) ((DB_MEMBER_CONST_TAG)(type)(TABLE_MEMBER_COL_STUB(name))(value))
+#define DB_MEMBER_TABLE(name, col_seq)     ((DB_MEMBER_TABLE_TAG)(name)(col_seq)                    ()     )
+
+// Database member type test:
+#define DB_MEMBER_IS(db_member, db_member_tag)                     \
+    BOOST_PP_EQUAL(BOOST_PP_SEQ_ELEM(0, db_member), db_member_tag)
+
+#define DB_MEMBER_CONST_TYPE(db_member_const) BOOST_PP_SEQ_ELEM(1, db_member_const)
+#define DB_MEMBER_CONST_NAME(db_member_const) BOOST_PP_SEQ_HEAD(BOOST_PP_SEQ_HEAD(BOOST_PP_SEQ_ELEM(2, db_member_const)))
+#define DB_MEMBER_CONST_VALUE(db_member_const) BOOST_PP_SEQ_ELEM(3, db_member_const)
+
+#define DB_MEMBER_TABLE_NAME(db_member_table) BOOST_PP_SEQ_ELEM(1, db_member_table)
+#define DB_MEMBER_TABLE_COL_SEQ(db_member_table) BOOST_PP_SEQ_ELEM(2, db_member_table)
+
+// Table record columns:
+#define TABLE_MEMBER_COL(sql_type, rec_type, name) ((sql_type)(rec_type)(name))
+
+#define TABLE_MEMBER_COL_SQL_TYPE(table_member) BOOST_PP_SEQ_ELEM(0, table_member)
+#define TABLE_MEMBER_COL_REC_TYPE(table_member) BOOST_PP_SEQ_ELEM(1, table_member)
+#define TABLE_MEMBER_COL_NAME(table_member) BOOST_PP_SEQ_ELEM(2, table_member)
+
+// User defined table column definitions:
+#define TABLE_PK(key) TABLE_MEMBER_COL(SQL_COL_TYPE_ID, JAVACH_REC_PK, key)
+#define TABLE_FK(table_name, foreign_key, name) TABLE_MEMBER_COL(SQL_COL_TYPE_FK(table_name, foreign_key), JAVACH_REC_FK, name)
+#define TABLE_COL(sql_type, name) TABLE_MEMBER_COL(sql_type, JAVACH_REC_VAL, name)
+
+// Macros common to multiple output file types:
+
+#define SQL_CREATE_COL(r, cat_op, col_elem)                    \
+    BOOST_PP_STRINGIZE(TABLE_MEMBER_COL_NAME(col_elem)) cat_op \
+    TABLE_MEMBER_COL_SQL_TYPE(col_elem) cat_op                 \
+    COMMA_STR cat_op
+
+
+// Macros for generating .h file:
+
+#define H_CONST_MEMBER(type, name) \
+    type name;
+
+#define H_TABLE_RECORD_COL(r, data, col_elem)                           \
+   TABLE_MEMBER_COL_REC_TYPE(col_elem) TABLE_MEMBER_COL_NAME(col_elem);
+
+#define H_TABLE_COLNAME(r, data, col_elem)       \
+   const char TABLE_MEMBER_COL_NAME(col_elem)[];
+
+#define H_TABLE_STRUCT(name, col_seq)     \
+    const struct                          \
+    {                                     \
+        const char* const tableName;      \
+                                          \
+        const struct                      \
+        {                                 \
+            BOOST_PP_SEQ_FOR_EACH         \
+            (                             \
+                H_TABLE_COLNAME,          \
+                _,                        \
+                col_seq                   \
+            )                             \
+        } columnName;                     \
+                                          \
+        struct Record                     \
+        {                                 \
+            BOOST_PP_SEQ_FOR_EACH         \
+            (                             \
+                H_TABLE_RECORD_COL,       \
+                _,                        \
+                col_seq                   \
+            )                             \
+        };                                \
+                                          \
+        const char* const sqlCreateTable; \
+                                          \
+        const char* const sqlDropTable;   \
+    } name;
+
+#define H_MEMBER(r, data, i, db_member)               \
+    BOOST_PP_EXPR_IIF                                 \
+    (                                                 \
+        DB_MEMBER_IS(db_member, DB_MEMBER_CONST_TAG), \
+        H_CONST_MEMBER                                \
+        (                                             \
+            DB_MEMBER_CONST_TYPE(db_member),          \
+            DB_MEMBER_CONST_NAME(db_member)           \
+        )                                             \
+    )                                                 \
+    BOOST_PP_EXPR_IIF                                 \
+    (                                                 \
+        DB_MEMBER_IS(db_member, DB_MEMBER_TABLE_TAG), \
+        H_TABLE_STRUCT                                \
+        (                                             \
+            DB_MEMBER_TABLE_NAME(db_member),          \
+            DB_MEMBER_TABLE_COL_SEQ(db_member)        \
+        )                                             \
+    )
+
+#define H_DB_CONTRACT(type, var, db_member_seq)             \
+    typedef struct                                          \
+    {                                                       \
+        BOOST_PP_SEQ_FOR_EACH_I(H_MEMBER, _, db_member_seq) \
+    } type;
+
+
+// Macros for generating .c file:
+
+#define C_TABLE_COL_SEQ(r, data, col_elem)                \
+    (BOOST_PP_STRINGIZE(TABLE_MEMBER_COL_NAME(col_elem)))
+
+#define C_INIT_STRUCT_TABLE_NAME(name) (name)
+
+#define SEQ_PREFIX_T(seq, token) \
+    BOOST_PP_SEQ_PUSH_FRONT      \
+    (                            \
+        BOOST_PP_SEQ_TAIL        \
+        (                        \
+            seq                  \
+        ),                       \
+        token                    \
+        BOOST_PP_SEQ_HEAD        \
+        (                        \
+            seq                  \
+        )                        \
+    )
+
+#define SEQ_POSTFIX_T(rev_seq, token) \
+    BOOST_PP_SEQ_PUSH_FRONT           \
+    (                                 \
+        BOOST_PP_SEQ_TAIL             \
+        (                             \
+            rev_seq                   \
+        ),                            \
+        BOOST_PP_SEQ_HEAD             \
+        (                             \
+            rev_seq                   \
+        )                             \
+        token                         \
+    )
+
+#define C_SEQ_PREFIX_BRACE(seq) SEQ_PREFIX_T(seq, LBRACE)
+
+#define C_SEQ_POSTFIX_BRACE(seq) \
+    BOOST_PP_SEQ_REVERSE         \
+    (                            \
+        SEQ_POSTFIX_T            \
+        (                        \
+            BOOST_PP_SEQ_REVERSE \
+            (                    \
+                seq              \
+            ),                   \
+            RBRACE               \
+        )                        \
+    )
+
+#define C_INIT_STRUCT_COLUMN_NAME(col_seq) \
+    C_SEQ_PREFIX_BRACE                     \
+    (                                      \
+        C_SEQ_POSTFIX_BRACE                \
+        (                                  \
+            BOOST_PP_SEQ_FOR_EACH          \
+            (                              \
+                C_TABLE_COL_SEQ,           \
+                _,                         \
+                col_seq                    \
+            )                              \
+        )                                  \
+    )
+
+#define C_SQL_CREATE_EXTRA_FOR_EACH_TYPE(r, i, type)    \
+    COMMA_STR                                           \
+    BOOST_PP_STRINGIZE                                  \
+    (                                                   \
+        BOOST_PP_CAT(BOOST_PP_CAT(extra, type), i) type \
+    )
+
+#define C_SQL_CREATE_EXTRA_REPEAT_COUNT(z, i, sql_type_seq)                  \
+    BOOST_PP_SEQ_FOR_EACH(C_SQL_CREATE_EXTRA_FOR_EACH_TYPE, i, sql_type_seq)
+
+#define C_SQL_CREATE_EXTRA(n, sql_type_seq)                           \
+    BOOST_PP_REPEAT(n, C_SQL_CREATE_EXTRA_REPEAT_COUNT, sql_type_seq)
+
+#define C_INIT_STRUCT_CREATE_TABLE(name, col_seq) \
+    (                                             \
+        SQL_CREATE_TABLE name                     \
+        "("                                       \
+            BOOST_PP_SEQ_FOR_EACH                 \
+            (                                     \
+                SQL_CREATE_COL,                   \
+                BOOST_PP_EMPTY(),                 \
+                col_seq                           \
+            )                                     \
+            "extra TEXT"                          \
+            C_SQL_CREATE_EXTRA                    \
+            (                                     \
+                5,                                \
+                (TEXT)                            \
+                (INTEGER)                         \
+                (REAL)                            \
+                (BLOB)                            \
+            )                                     \
+        ");"                                      \
+    )
+
+#define C_INIT_STRUCT_DROP_TABLE(name) \
+    (SQL_DROP_TABLE name ";")
+
+#define C_EMPTY_INIT_STRUCT_SEQ ()
+
+#define C_EXPR_IF_INIT_SEQ(init_struct_seq, expr)      \
+    BOOST_PP_EXPR_IIF                                  \
+    (                                                  \
+        BOOST_PP_NOT_EQUAL                             \
+        (                                              \
+            BOOST_PP_SEQ_SIZE(init_struct_seq),        \
+            BOOST_PP_SEQ_SIZE(C_EMPTY_INIT_STRUCT_SEQ) \
+        ),                                             \
+        expr                                           \
+    )
+
+#define C_INIT_STRUCT(init_struct_seq)     \
+    C_EXPR_IF_INIT_SEQ(init_struct_seq, {) \
+    BOOST_PP_SEQ_ENUM                      \
+    (                                      \
+        init_struct_seq                    \
+    )                                      \
+    C_EXPR_IF_INIT_SEQ(init_struct_seq, })
+
+#define C_INIT_STRUCT_SEQ(name, col_seq)      \
+    C_INIT_STRUCT_TABLE_NAME(name)            \
+    C_INIT_STRUCT_COLUMN_NAME(col_seq)        \
+    C_INIT_STRUCT_CREATE_TABLE(name, col_seq) \
+    C_INIT_STRUCT_DROP_TABLE(name)
+
+#define C_MEMBER(r, data, i, db_member)                   \
+    BOOST_PP_COMMA_IF(i)                                  \
+    BOOST_PP_EXPR_IIF                                     \
+    (                                                     \
+        DB_MEMBER_IS(db_member, DB_MEMBER_CONST_TAG),     \
+        DB_MEMBER_CONST_VALUE(db_member)                  \
+    )                                                     \
+    C_INIT_STRUCT                                         \
+    (                                                     \
+        BOOST_PP_IIF                                      \
+        (                                                 \
+            DB_MEMBER_IS(db_member, DB_MEMBER_TABLE_TAG), \
+            C_INIT_STRUCT_SEQ                             \
+            (                                             \
+                BOOST_PP_STRINGIZE                        \
+                (                                         \
+                    DB_MEMBER_TABLE_NAME(db_member)       \
+                ),                                        \
+                DB_MEMBER_TABLE_COL_SEQ(db_member)        \
+            ),                                            \
+            C_EMPTY_INIT_STRUCT_SEQ                       \
+        )                                                 \
+    )
+
+#define C_DB_CONTRACT(type, var, db_member_seq)             \
+    static const type var =                                 \
+    {                                                       \
+        BOOST_PP_SEQ_FOR_EACH_I(C_MEMBER, _, db_member_seq) \
+    };
+
+
+// Macros for generating .java file:
+
+#define JAVA_CONST_MEMBER(type, name, value) \
+    type name = value;
+
+#define JAVA_TABLE_RECORD_COL(r, data, col_elem)                         \
+    TABLE_MEMBER_COL_REC_TYPE(col_elem) TABLE_MEMBER_COL_NAME(col_elem);
+
+#define JAVA_TABLE_COL_NAME_DEFINE(name) \
+    static final String name = BOOST_PP_STRINGIZE(name);
+
+#define JAVA_TABLE_COL_NAME(r, data, col_elem)                  \
+    JAVA_TABLE_COL_NAME_DEFINE(TABLE_MEMBER_COL_NAME(col_elem))
+
+#define JAVA_SQL_CREATE_EXTRA_FOR_EACH_TYPE(r, i, type) \
+    + COMMA_STR +                                       \
+    BOOST_PP_STRINGIZE                                  \
+    (                                                   \
+        BOOST_PP_CAT(BOOST_PP_CAT(extra, type), i) type \
+    )
+
+#define JAVA_SQL_CREATE_EXTRA_REPEAT_COUNT(z, i, sql_type_seq)                  \
+    BOOST_PP_SEQ_FOR_EACH(JAVA_SQL_CREATE_EXTRA_FOR_EACH_TYPE, i, sql_type_seq)
+
+#define JAVA_SQL_CREATE_EXTRA(n, sql_type_seq)                           \
+    BOOST_PP_REPEAT(n, JAVA_SQL_CREATE_EXTRA_REPEAT_COUNT, sql_type_seq)
+
+#define JAVA_INIT_CREATE_TABLE(name, col_seq) \
+    SQL_CREATE_TABLE +                        \
+    BOOST_PP_STRINGIZE(name) +                \
+    "(" +                                     \
+        BOOST_PP_SEQ_FOR_EACH                 \
+        (                                     \
+            SQL_CREATE_COL,                   \
+            +,                                \
+            col_seq                           \
+        )                                     \
+        "extra TEXT"                          \
+        JAVA_SQL_CREATE_EXTRA                 \
+        (                                     \
+            5,                                \
+            (TEXT)                            \
+            (INTEGER)                         \
+            (REAL)                            \
+            (BLOB)                            \
+        ) +                                   \
+    ");"
+
+#define JAVA_INIT_DROP_TABLE(name)                  \
+    SQL_DROP_TABLE + BOOST_PP_STRINGIZE(name) + ";"
+
+#define JAVA_TABLE_CLASS(name, col_seq)            \
+    static class name {                            \
+                                                   \
+        static final String tableName =            \
+            BOOST_PP_STRINGIZE(name);              \
+                                                   \
+        static class ColumnName {                  \
+            BOOST_PP_SEQ_FOR_EACH                  \
+            (                                      \
+                JAVA_TABLE_COL_NAME,               \
+                _,                                 \
+                col_seq                            \
+            )                                      \
+        }                                          \
+                                                   \
+        static class Record {                      \
+            BOOST_PP_SEQ_FOR_EACH                  \
+            (                                      \
+                JAVA_TABLE_RECORD_COL,             \
+                _,                                 \
+                col_seq                            \
+            )                                      \
+        }                                          \
+                                                   \
+        static final String sqlCreateTable =       \
+            JAVA_INIT_CREATE_TABLE(name, col_seq); \
+                                                   \
+        static final String sqlDropTable =         \
+            JAVA_INIT_DROP_TABLE(name);            \
+    }
+
+#define JAVA_MEMBER(r, data, i, db_member)            \
+    BOOST_PP_EXPR_IIF                                 \
+    (                                                 \
+        DB_MEMBER_IS(db_member, DB_MEMBER_CONST_TAG), \
+        JAVA_CONST_MEMBER                             \
+        (                                             \
+            DB_MEMBER_CONST_TYPE(db_member),          \
+            DB_MEMBER_CONST_NAME(db_member),          \
+            DB_MEMBER_CONST_VALUE(db_member)          \
+        )                                             \
+    )                                                 \
+    BOOST_PP_EXPR_IIF                                 \
+    (                                                 \
+        DB_MEMBER_IS(db_member, DB_MEMBER_TABLE_TAG), \
+        JAVA_TABLE_CLASS                              \
+        (                                             \
+            DB_MEMBER_TABLE_NAME(db_member),          \
+            DB_MEMBER_TABLE_COL_SEQ(db_member)        \
+        )                                             \
+    )
+
+#define JAVA_DB_CONTRACT(type, var, db_member_seq) \
+    class type {                                   \
+        protected type() {}                        \
+                                                   \
+        BOOST_PP_SEQ_FOR_EACH_I                    \
+        (                                          \
+            JAVA_MEMBER,                           \
+            _,                                     \
+            db_member_seq                          \
+        )                                          \
+    }
+

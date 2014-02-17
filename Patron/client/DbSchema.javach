@@ -1,0 +1,191 @@
+// Copyright (c) 2014 Mitch T. Besser, All rights reserved.
+
+// This file describes the database schema. It uses the 'C'
+// preprocessor to generate the database contract file for either
+// a 'C' compiler or a 'Java' compiler. 
+//
+// If you are generating a 'C' source file, you will need to 
+// #include the generated source file inside another source file.  
+// For example, you could include the header and source inside
+// a SQLiteContract.c file as follows:  
+//
+// /* begin SQLiteContract.c */
+//
+// #include "DbSchemaGen.h" // Generated 'C' header
+// #include "DbSchemaGen.c" // Generated 'C' source
+//
+// Your code here...
+//
+// /* end SQLiteContract.c */
+
+// Usage:
+// gcc -E -P -D OUTPUT=[JAVA | C | H] filename >outfile.ext
+//
+// Examples:
+// gcc -I ~/opt/boost -x c -E -P -D OUTPUT=JAVA DbSchema.javach >DbSchemaGen.java
+// gcc -I ~/opt/boost -x c -E -P -D OUTPUT=C DbSchema.javach >DbSchemaGen.c
+// gcc -I ~/opt/boost -x c -E -P -D OUTPUT=H DbSchema.javach >DbSchemaGen.h
+
+// Patron Database Diagram:
+//
+// +--------------+       +--------------+
+// | Organization +------<|    Staff     |
+// |--------------|       |--------------|
+// |              |       |              |
+// |              |       |              |
+// +------+-------+       +--------------+
+//        |       |
+//        |       +--------------+
+//        |   +-------+          |
+//        |   |       |          |
+//        |   |       |          |
+// +------^---^---+---+   +------^-------+
+// |  Collection  +------<|     Item     |
+// |--------------|       |--------------|
+// |              |       |              |
+// |              |       |              |
+// +--------------+       +--------------+
+
+
+#include "DbContractGen.javach"
+
+
+// App Variables:
+// TODO: Decide where app variables should live.
+// - Kiosk Mode
+// - Coupons
+// - etc.
+
+#if OUTPUT==C || OUTPUT==H
+HASH pragma message("File generated from: "  __FILE__)
+NEWLINE
+#endif
+
+#if OUTPUT==JAVA
+package com.kea.patron.model;
+NEWLINE
+#endif
+
+JAVACH_DB_CONTRACT
+(
+	DbSchemaGen, dbSchemaGen, 
+
+	DB_MEMBER_CONST(JAVACH_STRING, databaseName,      "Patron.db")
+	DB_MEMBER_CONST(JAVACH_INT,    databaseVersion,   1          )
+
+	DB_MEMBER_CONST(JAVACH_STRING, filenameHideMedia, ".nomedia" ) // Hides files from Android Media Scanner.
+	DB_MEMBER_CONST(JAVACH_STRING, columnNameId,      "_id"      ) // android.provider.BaseColumns._ID
+	DB_MEMBER_CONST(JAVACH_STRING, columnNameCount,   "_count"   ) // android.provider.BaseColumns._COUNT
+	DB_MEMBER_CONST(JAVACH_STRING, columnNameData,    "_data"    ) // android.provider.MediaStore.MediaColumns.DATA
+
+	DB_MEMBER_TABLE
+	(
+		TABLE_NAME_ORGANIZATION,
+
+		TABLE_PK(ID)
+
+		TABLE_COL(SQL_COL_TYPE_REQUIRED, name          )
+		TABLE_COL(SQL_COL_TYPE_REQUIRED, type          ) // Zoo, Art Museum, Museum, Aquarium, etc...
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, tagline       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, description   )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, sponsor       )
+		TABLE_COL(SQL_COL_TYPE_REQUIRED, address       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, phone         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, web           )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, email         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, sms           )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, facebook      )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, twitter       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, blog          )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, socialMedia   ) // Access google+, tumblr, instagram, pinterest, etc...
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, gps           )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, icon          )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, logo          )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, pictureGallery)
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, audio         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, video         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, feature       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, calendar      )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, sponsorList   )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, donations     )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, notes         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, data          )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, url           )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, DATA          )
+	)
+
+	DB_MEMBER_TABLE
+	(
+		TABLE_NAME_STAFF,
+
+		TABLE_PK(ID)
+
+		TABLE_FK(TABLE_NAME_ORGANIZATION, ID, organizationId)
+
+		TABLE_COL(SQL_COL_TYPE_REQUIRED, name        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, title       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, description )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, photo       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, web         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, email       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, sms         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, facebook    )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, twitter     )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, blog        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, audio       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, video       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, socialMedia ) // access google+, tumblr, instagram, pinterest, etc...
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, data        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, url         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, DATA        )
+	)
+
+	DB_MEMBER_TABLE
+	(
+		TABLE_NAME_COLLECTION,
+
+		TABLE_PK(ID)
+
+		TABLE_FK(TABLE_NAME_ORGANIZATION, ID, organizationId)
+		TABLE_FK(TABLE_NAME_COLLECTION,   ID, collectionId  )
+
+		TABLE_COL(SQL_COL_TYPE_REQUIRED, name        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, description )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, location    )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, sponsor     )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, web         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, audio       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, video       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, data        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, url         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, DATA        )
+	)
+
+	DB_MEMBER_TABLE
+	(
+		TABLE_NAME_ITEM,
+
+		TABLE_PK(ID)
+
+		TABLE_FK(TABLE_NAME_ORGANIZATION, ID, organizationId)
+		TABLE_FK(TABLE_NAME_COLLECTION,   ID, collectionId  )
+
+		TABLE_COL(SQL_COL_TYPE_REQUIRED, name        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, description )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, category    )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, flag        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, photo       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, diagram     )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, location    )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, like        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, favorite    )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, adopt       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, sponsor     )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, web         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, audio       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, video       )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, data        )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, url         )
+		TABLE_COL(SQL_COL_TYPE_OPTIONAL, DATA        )
+	)
+)
