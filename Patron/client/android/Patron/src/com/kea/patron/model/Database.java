@@ -16,7 +16,7 @@ import android.provider.BaseColumns;
  * 
  */
 public class Database {
-	private class DbContract extends DbSchemaGen {}
+	public class DbContract extends DbSchemaGen {}
 
 	private class OpenHelper extends SQLiteOpenHelper {
 		public static final int DATABASE_VERSION = DbContract.databaseVersion;
@@ -32,6 +32,9 @@ public class Database {
 			db.execSQL(DbContract.Staff.sqlCreateTable);
 			db.execSQL(DbContract.Collection.sqlCreateTable);
 			db.execSQL(DbContract.Item.sqlCreateTable);
+			if (!db.isReadOnly()) {
+				db.execSQL("PRAGMA foreign_keys=ON;"); // Enable foreign key constraints.
+			}
 		}
 
 		@Override
@@ -66,7 +69,7 @@ public class Database {
 
 		protected abstract ContentValues createContentValues(final R record);
 
-		private long create(final R record) {
+		public long create(final R record) {
 			final ContentValues values = createContentValues(record);
 			final String tableName = getTableName();
 
@@ -76,7 +79,7 @@ public class Database {
 			return newRowId;
 		}
 
-		private Cursor read(final String[] projection, final String selection, final String[] selectionArgs) {
+		public Cursor read(final String[] projection, final String selection, final String[] selectionArgs) {
 
 			final String tableName = getTableName();
 			final String sortOrder = BaseColumns._ID + " DESC";
@@ -93,7 +96,7 @@ public class Database {
 			return cursor;
 		}
 
-		private int update(final R record) {
+		public int update(final R record) {
 			final String tableName = getTableName();
 			final ContentValues values = createContentValues(record);
 
@@ -110,7 +113,7 @@ public class Database {
 			return count;
 		}
 
-		private void delete(final long id) {
+		public void delete(final long id) {
 			final String tableName = getTableName();
 			final String selection = BaseColumns._ID + EXACT_MATCH;
 			final String[] selectionArgs = { String.valueOf(id) };
@@ -125,23 +128,25 @@ public class Database {
 			return DbContract.Organization.tableName;
 		}
 
-		private class Record extends DbSchemaGen.Organization.Record implements Database.Record {
+		public class Record extends DbSchemaGen.Organization.Record implements Database.Record {
 			@Override
 			public long getId() {
 				return _id;
 			}
 		}
 
+		private final class ColumnName extends DbContract.Organization.ColumnName {}
+
 //		// Sample Projection for read():
-//		final String[] projection = 
+//		public final String[] projection = 
 //		{
 //			ColumnName._id,
 //			ColumnName.name,
 //			ColumnName.type,
+//			ColumnName.address,
 //			ColumnName.tagline,
 //			ColumnName.description,
 //			ColumnName.sponsor,
-//			ColumnName.address,
 //			ColumnName.phone,
 //			ColumnName.web,
 //			ColumnName.email,
@@ -169,17 +174,15 @@ public class Database {
 		@Override
 		protected ContentValues createContentValues(final Record record) {
 
-			final class ColumnName extends DbContract.Organization.ColumnName {}
-
 			final ContentValues result = new ContentValues();
 
-			result.put(ColumnName._id,            record._id);
+			// result.put(ColumnName._id,            record._id);
 			result.put(ColumnName.name,           record.name);
 			result.put(ColumnName.type,           record.type);
+			result.put(ColumnName.address,        record.address);
 			result.put(ColumnName.tagline,        record.tagline);
 			result.put(ColumnName.description,    record.description);
 			result.put(ColumnName.sponsor,        record.sponsor);
-			result.put(ColumnName.address,        record.address);
 			result.put(ColumnName.phone,          record.phone);
 			result.put(ColumnName.web,            record.web);
 			result.put(ColumnName.email,          record.email);
@@ -207,51 +210,50 @@ public class Database {
 		}
 	}
 
-	public class Staff extends Table<Staff.Record> {
+	public final class Staff extends Table<Staff.Record> {
 
 		@Override
 		protected String getTableName() {
 			return DbContract.Staff.tableName;
 		}
 
-		class Record extends DbSchemaGen.Staff.Record implements Database.Record {
+		public class Record extends DbSchemaGen.Staff.Record implements Database.Record {
 			@Override
 			public long getId() {
 				return _id;
 			}
 		}
 
+		private final class ColumnName extends DbContract.Staff.ColumnName {}
+
 //		// Sample Projection for read():
-//		final String[] projection = 
-//		{
-//			_id,
-//			organizationId,
-//			name,
-//			title,
-//			description,
-//			photo,
-//			web,
-//			email,
-//			sms,
-//			facebook,
-//			twitter,
-//			blog,
-//			audio,
-//			video,
-//			socialMedia,
-//			data,
-//			url,
-//			_data
+//		final String[] projection = {
+//			ColumnName._id,
+//			ColumnName.organizationId,
+//			ColumnName.name,
+//			ColumnName.title,
+//			ColumnName.description,
+//			ColumnName.photo,
+//			ColumnName.web,
+//			ColumnName.email,
+//			ColumnName.sms,
+//			ColumnName.facebook,
+//			ColumnName.twitter,
+//			ColumnName.blog,
+//			ColumnName.audio,
+//			ColumnName.video,
+//			ColumnName.socialMedia,
+//			ColumnName.data,
+//			ColumnName.url,
+//			ColumnName._data
 //		};
 
 		@Override
 		protected ContentValues createContentValues(final Record record) {
 
-			final class ColumnName extends DbContract.Staff.ColumnName {}
-
 			final ContentValues result = new ContentValues();
 
-			result.put(ColumnName._id,            record._id);
+			// result.put(ColumnName._id,            record._id);
 			result.put(ColumnName.organizationId, record.organizationId);
 			result.put(ColumnName.name,           record.name);
 			result.put(ColumnName.title,          record.title);
@@ -274,7 +276,7 @@ public class Database {
 		}
 	}
 
-	public class Collection extends Table<Collection.Record> {
+	public final class Collection extends Table<Collection.Record> {
 
 		@Override
 		protected String getTableName() {
@@ -288,28 +290,28 @@ public class Database {
 			}
 		}
 
+		private final class ColumnName extends DbContract.Collection.ColumnName {}
+
 //		// Sample Projection for read():
 //		final String[] projection = 
 //		{
-//			_id,
-//			organizationId,
-//			collectionId,
-//			name,
-//			description,
-//			sponsor,
-//			location,
-//			web,
-//			audio,
-//			video,
-//			data,
-//			url,
-//			_data
+//			ColumnName._id,
+//			ColumnName.organizationId,
+//			ColumnName.collectionId,
+//			ColumnName.name,
+//			ColumnName.description,
+//			ColumnName.sponsor,
+//			ColumnName.location,
+//			ColumnName.web,
+//			ColumnName.audio,
+//			ColumnName.video,
+//			ColumnName.data,
+//			ColumnName.url,
+//			ColumnName._data
 //		};
 
 		@Override
 		protected ContentValues createContentValues(final Record record) {
-
-			final class ColumnName extends DbContract.Collection.ColumnName {}
 
 			final ContentValues result = new ContentValues();
 
@@ -331,7 +333,7 @@ public class Database {
 		}
 	}
 
-	public class Item extends Table<Item.Record> {
+	public final class Item extends Table<Item.Record> {
 
 		@Override
 		protected String getTableName() {
@@ -345,32 +347,32 @@ public class Database {
 			}
 		}
 
+		private final class ColumnName extends DbContract.Item.ColumnName {}
+
 //		// Sample Projection for read():
 //		final String[] projection = 
 //		{
-//			_id,
-//			organizationId,
-//			collectionId,
-//			name,
-//			description,
-//			sponsor,
-//			photo,
-//			diagram,
-//			location,
-//			like,
-//			adopt,
-//			web,
-//			audio,
-//			video,
-//			data,
-//			url,
-//			_data
+//			ColumnName._id,
+//			ColumnName.organizationId,
+//			ColumnName.collectionId,
+//			ColumnName.name,
+//			ColumnName.description,
+//			ColumnName.sponsor,
+//			ColumnName.photo,
+//			ColumnName.diagram,
+//			ColumnName.location,
+//			ColumnName.like,
+//			ColumnName.adopt,
+//			ColumnName.web,
+//			ColumnName.audio,
+//			ColumnName.video,
+//			ColumnName.data,
+//			ColumnName.url,
+//			ColumnName._data
 //		};
 
 		@Override
 		protected ContentValues createContentValues(final Record record) {
-
-			final class ColumnName extends DbContract.Item.ColumnName {}
 
 			final ContentValues result = new ContentValues();
 
@@ -396,9 +398,16 @@ public class Database {
 		}
 	}
 
-	public Database() {
-		final Context context = PatronApp.getAppContext();
+	public Database(final Context context) {
 		final OpenHelper openHelper = new OpenHelper(context);
 		db_ = openHelper.getWritableDatabase();
+	}
+
+	public Database() {
+		this(PatronApp.getAppContext());
+	}
+
+	public void close() {
+		db_.close();
 	}
 }
