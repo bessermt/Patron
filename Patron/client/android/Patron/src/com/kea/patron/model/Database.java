@@ -16,7 +16,26 @@ import android.provider.BaseColumns;
  * 
  */
 public class Database {
-	public class DbContract extends DbSchemaGen {}
+
+	public class DbContract extends DbSchemaGen {
+		public static final String SQL_CREATE_INDEX = "CREATE INDEX ";
+		public static final String SQL_DROP_INDEX = "DROP INDEX IF EXISTS ";
+		
+		public static final String SQL_CREATE_INDEX_STAFF_ORGANIZATION = SQL_CREATE_INDEX + "StaffOrganizationIndex ON Staff(organizationId);";
+		public static final String SQL_DROP_INDEX_STAFF_ORGANIZATION = SQL_DROP_INDEX + "StaffOrganizationIndex;";
+
+		public static final String SQL_CREATE_INDEX_COLLECTION_ORGANIZATION = SQL_CREATE_INDEX + "CollectionOrganizationIndex ON Collection(organizationId);";
+		public static final String SQL_DROP_INDEX_COLLECTION_ORGANIZATION = SQL_DROP_INDEX + "CollectionOrganizationIndex;";
+
+		public static final String SQL_CREATE_INDEX_COLLECTION_COLLECTION = SQL_CREATE_INDEX + "CollectionCollectionIndex ON Collection(collectionId);";
+		public static final String SQL_DROP_INDEX_COLLECTION_COLLECTION = SQL_DROP_INDEX + "CollectionCollectionIndex;";
+
+		public static final String SQL_CREATE_INDEX_ITEM_ORGANIZATION = SQL_CREATE_INDEX + "ItemOrganizationIndex ON Item(organizationId);";
+		public static final String SQL_DROP_INDEX_ITEM_COLLECTION = SQL_DROP_INDEX + "ItemCollectionIndex;";
+
+		public static final String SQL_CREATE_INDEX_ITEM_COLLECTION = SQL_CREATE_INDEX + "ItemCollectionIndex ON Item(collectionId);";
+		public static final String SQL_DROP_INDEX_ITEM_ORGANIZATION = SQL_DROP_INDEX + "ItemOrganizationIndex;";
+	}
 
 	private class OpenHelper extends SQLiteOpenHelper {
 		public static final int DATABASE_VERSION = DbContract.databaseVersion;
@@ -29,9 +48,18 @@ public class Database {
 		@Override
 		public void onCreate(SQLiteDatabase db) {
 			db.execSQL(DbContract.Organization.sqlCreateTable);
+
 			db.execSQL(DbContract.Staff.sqlCreateTable);
+			db.execSQL(DbContract.SQL_CREATE_INDEX_STAFF_ORGANIZATION);
+
 			db.execSQL(DbContract.Collection.sqlCreateTable);
+			db.execSQL(DbContract.SQL_CREATE_INDEX_COLLECTION_ORGANIZATION);
+			db.execSQL(DbContract.SQL_CREATE_INDEX_COLLECTION_COLLECTION);
+
 			db.execSQL(DbContract.Item.sqlCreateTable);
+			db.execSQL(DbContract.SQL_CREATE_INDEX_ITEM_ORGANIZATION);
+			db.execSQL(DbContract.SQL_CREATE_INDEX_ITEM_COLLECTION);
+
 			if (!db.isReadOnly()) {
 				db.execSQL("PRAGMA foreign_keys=ON;"); // Enable foreign key constraints.
 			}
@@ -41,10 +69,19 @@ public class Database {
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			// This database is only a cache for online data, so its upgrade
 			// policy is to simply to discard the data and start over.
+			db.execSQL(DbContract.SQL_DROP_INDEX_ITEM_ORGANIZATION);
+			db.execSQL(DbContract.SQL_DROP_INDEX_ITEM_COLLECTION);
 			db.execSQL(DbContract.Item.sqlDropTable);
+
+			db.execSQL(DbContract.SQL_DROP_INDEX_COLLECTION_COLLECTION);
+			db.execSQL(DbContract.SQL_DROP_INDEX_COLLECTION_ORGANIZATION);
 			db.execSQL(DbContract.Collection.sqlDropTable);
+
+			db.execSQL(DbContract.SQL_DROP_INDEX_STAFF_ORGANIZATION);
 			db.execSQL(DbContract.Staff.sqlDropTable);
+
 			db.execSQL(DbContract.Organization.sqlDropTable);
+
 			onCreate(db);
 		}
 
@@ -121,7 +158,7 @@ public class Database {
 		}
 	}
 
-	public final class Organization extends Table<Organization.Record> {
+	public class Organization extends Table<Organization.Record> {
 
 		@Override
 		protected String getTableName() {
@@ -135,11 +172,10 @@ public class Database {
 			}
 		}
 
-		private final class ColumnName extends DbContract.Organization.ColumnName {}
+		private class ColumnName extends DbContract.Organization.ColumnName {}
 
 //		// Sample Projection for read():
-//		public final String[] projection = 
-//		{
+//		private final String[] projection = {
 //			ColumnName._id,
 //			ColumnName.name,
 //			ColumnName.type,
@@ -210,7 +246,7 @@ public class Database {
 		}
 	}
 
-	public final class Staff extends Table<Staff.Record> {
+	public class Staff extends Table<Staff.Record> {
 
 		@Override
 		protected String getTableName() {
@@ -224,10 +260,10 @@ public class Database {
 			}
 		}
 
-		private final class ColumnName extends DbContract.Staff.ColumnName {}
+		private class ColumnName extends DbContract.Staff.ColumnName {}
 
 //		// Sample Projection for read():
-//		final String[] projection = {
+//		private final String[] projection = {
 //			ColumnName._id,
 //			ColumnName.organizationId,
 //			ColumnName.name,
@@ -276,25 +312,24 @@ public class Database {
 		}
 	}
 
-	public final class Collection extends Table<Collection.Record> {
+	public class Collection extends Table<Collection.Record> {
 
 		@Override
 		protected String getTableName() {
 			return DbContract.Collection.tableName;
 		}
 
-		class Record extends DbSchemaGen.Collection.Record implements Database.Record {
+		private class Record extends DbSchemaGen.Collection.Record implements Database.Record {
 			@Override
 			public long getId() {
 				return _id;
 			}
 		}
 
-		private final class ColumnName extends DbContract.Collection.ColumnName {}
+		private class ColumnName extends DbContract.Collection.ColumnName {}
 
 //		// Sample Projection for read():
-//		final String[] projection = 
-//		{
+//		private final String[] projection = {
 //			ColumnName._id,
 //			ColumnName.organizationId,
 //			ColumnName.collectionId,
@@ -333,25 +368,24 @@ public class Database {
 		}
 	}
 
-	public final class Item extends Table<Item.Record> {
+	public class Item extends Table<Item.Record> {
 
 		@Override
 		protected String getTableName() {
 			return DbContract.Item.tableName;
 		}
 
-		class Record extends DbSchemaGen.Item.Record implements Database.Record {
+		private class Record extends DbSchemaGen.Item.Record implements Database.Record {
 			@Override
 			public long getId() {
 				return _id;
 			}
 		}
 
-		private final class ColumnName extends DbContract.Item.ColumnName {}
+		private class ColumnName extends DbContract.Item.ColumnName {}
 
 //		// Sample Projection for read():
-//		final String[] projection = 
-//		{
+//		private final String[] projection = {
 //			ColumnName._id,
 //			ColumnName.organizationId,
 //			ColumnName.collectionId,

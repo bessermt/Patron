@@ -32,7 +32,6 @@ public class DatabaseTest extends AndroidTestCase {
 	}
 
 	private long addOrganization() {
-
 		final Database.Organization organizationTable = db_.new Organization();
 		final Database.Organization.Record organizationRecord = organizationTable.new Record();
 		organizationRecord.name = "Grizzly and Wolf Discovery Center";
@@ -41,8 +40,7 @@ public class DatabaseTest extends AndroidTestCase {
 
 		final long recordId = organizationTable.create(organizationRecord);
 
-		final class ColumnName extends Database.DbContract.Organization.ColumnName {}
-
+		final class ColumnName extends Database.DbContract.Organization.ColumnName {};
 		final String[] projection = {
 			ColumnName._id,
 			ColumnName.name,
@@ -87,15 +85,14 @@ public class DatabaseTest extends AndroidTestCase {
 		final Database.Staff staffTable = db_.new Staff();
 		final Database.Staff.Record staffRecord = staffTable.new Record();
 		staffRecord.organizationId = organizationId;
-		staffRecord.name = "Joan Stafford";
+		staffRecord.name = "Joan Embery";
 		staffRecord.title = "Keeper";
-		staffRecord.description = "Joan enjoys sharing her knowledge of the animals in her care. If you are lucky enough to spot Joan, be sure introduce yourself and ask her your questions regarding the care of the animals.";
+		staffRecord.description = "Joan enjoys sharing her knowledge of the animals in her care. If you are lucky enough to spot Joan, be sure introduce yourself and ask her your questions regarding care of the zoo's animals.";
 
 		final long recordId = staffTable.create(staffRecord);
 		assertTrue(recordId > 0);
 
 		final class ColumnName extends Database.DbContract.Staff.ColumnName {}
-
 		final String[] projection = {
 			ColumnName._id,
 			ColumnName.name,

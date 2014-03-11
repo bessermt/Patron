@@ -1,22 +1,22 @@
 // Copyright (c) 2014 Mitch T. Besser, All rights reserved.
 
-// This file describes the database schema. It uses the 'C'
+// This file describes the SQLite database schema. It uses the 'C'
 // preprocessor to generate the database contract file for either
 // a 'C' compiler or a 'Java' compiler. 
 //
 // If you are generating a 'C' source file, you will need to 
 // #include the generated source file inside another source file.  
 // For example, you could include the header and source inside
-// a SQLiteContract.c file as follows:  
+// a DBContract.c file as follows:  
 //
-// /* begin SQLiteContract.c */
+// /* begin DBContract.c */
 //
 // #include "DbSchemaGen.h" // Generated 'C' header
 // #include "DbSchemaGen.c" // Generated 'C' source
 //
 // Your code here...
 //
-// /* end SQLiteContract.c */
+// /* end DBContract.c */
 
 // Usage:
 // gcc -E -P -D OUTPUT=[JAVA | C | H] filename >outfile.ext
@@ -72,17 +72,17 @@ NEWLINE
 #define TABLE_NAME_COLLECTION   Collection
 #define TABLE_NAME_ITEM         Item
 
-JAVACH_DB_CONTRACT
+DB_CONTRACT
 (
 	DbSchemaGen, dbSchemaGen, 
 
-	DB_MEMBER_CONST(JAVACH_STRING, databaseName,      "Patron.db")
-	DB_MEMBER_CONST(JAVACH_INT,    databaseVersion,   1          )
+	DB_MEMBER_CONST(DB_STRING,  databaseName,      "Patron.db")
+	DB_MEMBER_CONST(DB_INTEGER, databaseVersion,   1          )
 
-	DB_MEMBER_CONST(JAVACH_STRING, filenameHideMedia, ".nomedia" ) // Hides files from Android Media Scanner.
-	DB_MEMBER_CONST(JAVACH_STRING, columnNameId,      "_id"      ) // android.provider.BaseColumns._ID
-	DB_MEMBER_CONST(JAVACH_STRING, columnNameCount,   "_count"   ) // android.provider.BaseColumns._COUNT
-	DB_MEMBER_CONST(JAVACH_STRING, columnNameData,    "_data"    ) // android.provider.MediaStore.MediaColumns.DATA
+	DB_MEMBER_CONST(DB_STRING,  filenameHideMedia, ".nomedia" ) // Hides files from Android Media Scanner.
+	DB_MEMBER_CONST(DB_STRING,  columnNameId,      "_id"      ) // android.provider.BaseColumns._ID
+	DB_MEMBER_CONST(DB_STRING,  columnNameCount,   "_count"   ) // android.provider.BaseColumns._COUNT
+	DB_MEMBER_CONST(DB_STRING,  columnNameData,    "_data"    ) // android.provider.MediaStore.MediaColumns.DATA
 
 	DB_MEMBER_TABLE
 	(

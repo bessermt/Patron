@@ -41,7 +41,7 @@
 
 // Output language routing macros: 
 #if OUTPUT==JAVA
-#	define JAVACH_INT static final int
+#	define JAVACH_INTEGER static final int
 #	define JAVACH_STRING static final String
 #	define JAVACH_REC_PK protected long
 #	define JAVACH_REC_FK public long
@@ -50,7 +50,7 @@
 #	define CAT_OP +
 #elif OUTPUT==C || OUTPUT==H
 #	define HASH #
-#	define JAVACH_INT const int
+#	define JAVACH_INTEGER const int
 #	define JAVACH_STRING const char* const
 #	define JAVACH_REC_PK const long
 #	define JAVACH_REC_FK long
@@ -72,19 +72,18 @@
 #define NEWLINE BOOST_PP_EMPTY()
 
 // Android specific definitions:
-#define ID _id     // android.provider.BaseColumns._ID
-#define DATA _data // android.provider.MediaStore.MediaColumns.DATA
+#define _ID _id     // android.provider.BaseColumns._ID
+#define _DATA _data // android.provider.MediaStore.MediaColumns.DATA
 
 // Common SQL command fragments:
 #define SQL_CREATE_TABLE "CREATE TABLE "
 #define SQL_DROP_TABLE "DROP TABLE IF EXISTS "
 #define SQL_COL_PK(key_name)                                                 \
     BOOST_PP_STRINGIZE(key_name) CAT_OP " INTEGER PRIMARY KEY AUTOINCREMENT"
+
 #define SQL_COL_FK(name)                                \
     BOOST_PP_STRINGIZE(name) CAT_OP " INTEGER NOT NULL"
 
-#define VALUE_OPTIONAL " TEXT"
-#define VALUE_REQUIRED " TEXT NOT NULL"
 #define SQL_COL_VALUE(name, value_type) BOOST_PP_STRINGIZE(name) CAT_OP value_type
 
 #define SQL_FK_REF(name, table, fk_name)                                       \
@@ -93,19 +92,12 @@
     " REFERENCES " CAT_OP BOOST_PP_STRINGIZE(table) CAT_OP                     \
     "(" CAT_OP BOOST_PP_STRINGIZE(fk_name) CAT_OP ")"
 
-*********
-TODO: CREATE UNIQUE INDEX for foreign keys.
-TODO: Move Macros used by users to a single section of this file.
-*********
-
 // Database member tags:
 #define DB_MEMBER_CONST_TAG 0
 #define DB_MEMBER_TABLE_TAG 1
 
-// Database member sequence elements:
+// DATABASE_MEMBER_* sequence element placeholder:
 #define TABLE_MEMBER_COL_STUB(name) TABLE_MEMBER_COL(name, BOOST_PP_EMPTY, BOOST_PP_EMPTY, BOOST_PP_EMPTY, BOOST_PP_EMPTY)
-#define DB_MEMBER_CONST(type, name, value) ((DB_MEMBER_CONST_TAG)(type)(TABLE_MEMBER_COL_STUB(name))(value))
-#define DB_MEMBER_TABLE(name, col_seq)     ((DB_MEMBER_TABLE_TAG)(name)(col_seq)                    ()     )
 
 // Database member type test:
 #define DB_MEMBER_IS(db_member, db_member_tag)                     \
@@ -152,15 +144,6 @@ TODO: Move Macros used by users to a single section of this file.
         TABLE_MEMBER_IS(table_member, TABLE_MEMBER_VALUE_TAG), \
         JAVACH_REC_VAL                                         \
     )
-
-
-#define TABLE_PK(key_name)                                                                          \
-    TABLE_MEMBER_COL(TABLE_MEMBER_PK_TAG, key_name, BOOST_PP_EMPTY, BOOST_PP_EMPTY, BOOST_PP_EMPTY)
-#define TABLE_FK(fk_table, fk_name, name)                                          \
-    TABLE_MEMBER_COL(TABLE_MEMBER_FK_TAG, name, BOOST_PP_EMPTY, fk_table, fk_name)
-#define TABLE_COL(value_type, name)                                                            \
-    TABLE_MEMBER_COL(TABLE_MEMBER_VALUE_TAG, name, value_type, BOOST_PP_EMPTY, BOOST_PP_EMPTY)
-
 
 // Macros common to multiple output file types: 
 
@@ -211,6 +194,35 @@ TODO: Move Macros used by users to a single section of this file.
         )                                               \
     )
 
+#define INIT_SQL_CREATE_TABLE(name, col_seq) \
+        SQL_CREATE_TABLE CAT_OP              \
+        name CAT_OP                          \
+        "(" CAT_OP                           \
+            BOOST_PP_SEQ_FOR_EACH            \
+            (                                \
+                SQL_CREATE_COL,              \
+                BOOST_PP_EMPTY,              \
+                col_seq                      \
+            )                                \
+            "extra TEXT"                     \
+            SQL_CREATE_EXTRA                 \
+            (                                \
+                5,                           \
+                (TEXT)                       \
+                (INTEGER)                    \
+                (REAL)                       \
+                (BLOB)                       \
+            )                                \
+            BOOST_PP_SEQ_FOR_EACH            \
+            (                                \
+                SQL_CREATE_FK,               \
+                BOOST_PP_EMPTY,              \
+                col_seq                      \
+            )                                \
+        CAT_OP ");"
+
+#define INIT_SQL_DROP_TABLE(name)         \
+    SQL_DROP_TABLE CAT_OP name CAT_OP ";"
 
 // Macros for generating .h file:
 
@@ -344,36 +356,11 @@ TODO: Move Macros used by users to a single section of this file.
         )                                  \
     )
 
-#define C_INIT_STRUCT_CREATE_TABLE(name, col_seq) \
-    (                                             \
-        SQL_CREATE_TABLE name                     \
-        "("                                       \
-            BOOST_PP_SEQ_FOR_EACH                 \
-            (                                     \
-                SQL_CREATE_COL,                   \
-                BOOST_PP_EMPTY,                   \
-                col_seq                           \
-            )                                     \
-            "extra TEXT"                          \
-            SQL_CREATE_EXTRA                      \
-            (                                     \
-                5,                                \
-                (TEXT)                            \
-                (INTEGER)                         \
-                (REAL)                            \
-                (BLOB)                            \
-            )                                     \
-            BOOST_PP_SEQ_FOR_EACH                 \
-            (                                     \
-                SQL_CREATE_FK,                    \
-                BOOST_PP_EMPTY,                   \
-                col_seq                           \
-            )                                     \
-        CAT_OP ");"                               \
-    )
+#define C_INIT_CREATE_TABLE(name, col_seq) \
+    (INIT_SQL_CREATE_TABLE(name, col_seq))
 
-#define C_INIT_STRUCT_DROP_TABLE(name) \
-    (SQL_DROP_TABLE name ";")
+#define C_INIT_DROP_TABLE(name) \
+    (INIT_SQL_DROP_TABLE(name))
 
 #define C_EMPTY_INIT_STRUCT_SEQ ()
 
@@ -396,11 +383,11 @@ TODO: Move Macros used by users to a single section of this file.
     )                                      \
     C_EXPR_IF_INIT_SEQ(init_struct_seq, })
 
-#define C_INIT_STRUCT_SEQ(name, col_seq)      \
-    C_INIT_STRUCT_TABLE_NAME(name)            \
-    C_INIT_STRUCT_COLUMN_NAME(col_seq)        \
-    C_INIT_STRUCT_CREATE_TABLE(name, col_seq) \
-    C_INIT_STRUCT_DROP_TABLE(name)
+#define C_INIT_STRUCT_SEQ(name, col_seq) \
+    C_INIT_STRUCT_TABLE_NAME(name)       \
+    C_INIT_STRUCT_COLUMN_NAME(col_seq)   \
+    C_INIT_CREATE_TABLE(name, col_seq)   \
+    C_INIT_DROP_TABLE(name)
 
 #define C_MEMBER(r, data, i, db_member)                   \
     BOOST_PP_COMMA_IF(i)                                  \
@@ -447,65 +434,44 @@ TODO: Move Macros used by users to a single section of this file.
 #define JAVA_TABLE_COL_NAME(r, data, col_elem)                  \
     JAVA_TABLE_COL_NAME_DEFINE(TABLE_MEMBER_COL_NAME(col_elem))
 
-#define JAVA_INIT_CREATE_TABLE(name, col_seq) \
-    SQL_CREATE_TABLE CAT_OP                   \
-    BOOST_PP_STRINGIZE(name) CAT_OP           \
-    "(" +                                     \
-        BOOST_PP_SEQ_FOR_EACH                 \
-        (                                     \
-            SQL_CREATE_COL,                   \
-            BOOST_PP_EMPTY,                   \
-            col_seq                           \
-        )                                     \
-        "extra TEXT"                          \
-        SQL_CREATE_EXTRA                      \
-        (                                     \
-            5,                                \
-            (TEXT)                            \
-            (INTEGER)                         \
-            (REAL)                            \
-            (BLOB)                            \
-        )                                     \
-        BOOST_PP_SEQ_FOR_EACH                 \
-        (                                     \
-            SQL_CREATE_FK,                    \
-            BOOST_PP_EMPTY,                   \
-            col_seq                           \
-        )                                     \
-    CAT_OP ");"
+#define JAVA_INIT_CREATE_TABLE(name, col_seq)                \
+    INIT_SQL_CREATE_TABLE(BOOST_PP_STRINGIZE(name), col_seq)
 
-#define JAVA_INIT_DROP_TABLE(name)                  \
-    SQL_DROP_TABLE + BOOST_PP_STRINGIZE(name) + ";"
+#define JAVA_INIT_DROP_TABLE(name) \
+    INIT_SQL_DROP_TABLE            \
+    (                              \
+        BOOST_PP_STRINGIZE(name)   \
+    )
 
-#define JAVA_TABLE_CLASS(name, col_seq)            \
-    public static class name {                     \
-                                                   \
-        static final String tableName =            \
-            BOOST_PP_STRINGIZE(name);              \
-                                                   \
-        public static class ColumnName {           \
-            BOOST_PP_SEQ_FOR_EACH                  \
-            (                                      \
-                JAVA_TABLE_COL_NAME,               \
-                _,                                 \
-                col_seq                            \
-            )                                      \
-        }                                          \
-                                                   \
-        static class Record {                      \
-            BOOST_PP_SEQ_FOR_EACH                  \
-            (                                      \
-                JAVA_TABLE_RECORD_COL,             \
-                _,                                 \
-                col_seq                            \
-            )                                      \
-        }                                          \
-                                                   \
-        static final String sqlCreateTable =       \
-            JAVA_INIT_CREATE_TABLE(name, col_seq); \
-                                                   \
-        static final String sqlDropTable =         \
-            JAVA_INIT_DROP_TABLE(name);            \
+#define JAVA_TABLE_CLASS(name, col_seq)              \
+    public static class name {                       \
+                                                     \
+        static final String tableName =              \
+            BOOST_PP_STRINGIZE(name);                \
+                                                     \
+        public static class ColumnName {             \
+            BOOST_PP_SEQ_FOR_EACH                    \
+            (                                        \
+                JAVA_TABLE_COL_NAME,                 \
+                _,                                   \
+                col_seq                              \
+            )                                        \
+        }                                            \
+                                                     \
+        public static class Record {                 \
+            BOOST_PP_SEQ_FOR_EACH                    \
+            (                                        \
+                JAVA_TABLE_RECORD_COL,               \
+                _,                                   \
+                col_seq                              \
+            )                                        \
+        }                                            \
+                                                     \
+        static final String sqlCreateTable =         \
+            JAVA_INIT_CREATE_TABLE(name, col_seq);   \
+                                                     \
+        static final String sqlDropTable =           \
+            JAVA_INIT_DROP_TABLE(name);              \
     }
 
 #define JAVA_MEMBER(r, data, i, db_member)            \
@@ -530,7 +496,7 @@ TODO: Move Macros used by users to a single section of this file.
     )
 
 #define JAVA_DB_CONTRACT(type, var, db_member_seq) \
-    public class type {                            \
+    class type {                                   \
         protected type() {}                        \
                                                    \
         BOOST_PP_SEQ_FOR_EACH_I                    \
@@ -541,3 +507,23 @@ TODO: Move Macros used by users to a single section of this file.
         )                                          \
     }
 
+// User level macros:
+#define DB_CONTRACT(type, var, db_member_seq) JAVACH_DB_CONTRACT(type, var, db_member_seq)
+#define DB_MEMBER_CONST(type, name, value) ((DB_MEMBER_CONST_TAG)(type)(TABLE_MEMBER_COL_STUB(name))(value))
+#define DB_MEMBER_TABLE(name, col_seq)     ((DB_MEMBER_TABLE_TAG)(name)(col_seq)                    ()     )
+#define DB_INTEGER JAVACH_INTEGER
+#define DB_STRING JAVACH_STRING
+#define ID _ID
+#define DATA _DATA
+
+#define TABLE_PK(key_name)                                                                          \
+    TABLE_MEMBER_COL(TABLE_MEMBER_PK_TAG, key_name, BOOST_PP_EMPTY, BOOST_PP_EMPTY, BOOST_PP_EMPTY)
+
+#define TABLE_FK(fk_table, fk_name, name)                                          \
+    TABLE_MEMBER_COL(TABLE_MEMBER_FK_TAG, name, BOOST_PP_EMPTY, fk_table, fk_name)
+
+#define TABLE_COL(value_type, name)                                                            \
+    TABLE_MEMBER_COL(TABLE_MEMBER_VALUE_TAG, name, value_type, BOOST_PP_EMPTY, BOOST_PP_EMPTY)
+
+#define VALUE_OPTIONAL " TEXT"
+#define VALUE_REQUIRED " TEXT NOT NULL"
