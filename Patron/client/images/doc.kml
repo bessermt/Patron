@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<kml xmlns="http://www.opengis.net/kml/2.2">
+    <Document>
+        <Region>
+            <LatLonAltBox>
+                <north>44.657240</north>
+                <south>44.654130</south>
+                <east>-111.09742</east>
+                <west>-111.09989</west>
+            </LatLonAltBox>
+            <Lod>
+                <minLodPixels>128</minLodPixels>
+            </Lod>
+        </Region>
+
+        <GroundOverlay>
+            <name>Grizzly and Wolf Discovery Center</name>
+            <description>A Non-Profit Educational Facility</description>
+            <color>a8ffffff</color>
+            <Icon>
+                <href>files/GWDCMap.png</href>
+                <viewBoundScale>0.75</viewBoundScale>
+            </Icon>
+            <LatLonBox>
+                <north>44.657240</north>
+                <south>44.654130</south>
+                <east>-111.09742</east>
+                <west>-111.09989</west>
+            </LatLonBox>
+        </GroundOverlay>
+
+        <Folder>
+            <name>zoomFolder</name>
+            <Region>
+                <LatLonAltBox>
+                    <north>44.656240</north>
+                    <south>44.655130</south>
+                    <east>-111.09800</east>
+                    <west>-111.09900</west>
+                </LatLonAltBox>
+                <Lod>
+                    <minLodPixels>256</minLodPixels>
+                </Lod>
+            </Region>
+
+            <GroundOverlay>
+                <name>Grizzly and Wolf Discovery Center Restrooms</name>
+                <description>A Non-Profit Educational Facility</description>
+                <color>a8ffffff</color>
+                <Icon>
+                    <href>files/GWDCEntranceMap.png</href>
+                    <viewBoundScale>0.75</viewBoundScale>
+                </Icon>
+                <LatLonBox>
+                    <north>44.656240</north>
+                    <south>44.655130</south>
+                    <east>-111.09800</east>
+                    <west>-111.09900</west>
+                </LatLonBox>
+            </GroundOverlay>
+
+        </Folder>
+    </Document>
+</kml>
+
